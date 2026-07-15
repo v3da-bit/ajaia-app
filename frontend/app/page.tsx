@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import RequireAuth from "@/components/RequireAuth";
+import Spinner from "@/components/Spinner";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
 
@@ -72,25 +73,40 @@ function Dashboard() {
           <span>
             Signed in as <strong className="text-neutral-800">{user?.name}</strong>
           </span>
-          <button onClick={logout} className="underline hover:text-neutral-800">
+          <button
+            onClick={logout}
+            className="underline decoration-transparent transition hover:text-neutral-800 hover:decoration-current"
+          >
             Switch user
           </button>
         </div>
       </div>
 
       {error && (
-        <p className="mb-6 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
+        <p className="animate-fade-in mb-6 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
+          {error}
+        </p>
       )}
 
       <div className="mb-10 flex flex-wrap items-center gap-3">
         <button
           onClick={() => createMutation.mutate()}
           disabled={createMutation.isPending}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-neutral-700 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
         >
+          {createMutation.isPending && <Spinner className="h-3.5 w-3.5 text-white" />}
           + New document
         </button>
 
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploadMutation.isPending}
+          className="flex items-center gap-2 rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium transition-all hover:bg-neutral-50 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
+        >
+          {uploadMutation.isPending && <Spinner className="h-3.5 w-3.5" />}
+          {uploadMutation.isPending ? "Uploading…" : "Upload file"}
+        </button>
         <input
           ref={fileInputRef}
           type="file"
@@ -102,7 +118,7 @@ function Dashboard() {
               uploadMutation.mutate(file);
             }
           }}
-          className="text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-neutral-100 file:px-3 file:py-2 file:text-sm hover:file:bg-neutral-200"
+          className="hidden"
         />
         <span className="text-xs text-neutral-400">
           Supported: .{SUPPORTED_UPLOAD_EXTENSIONS.join(", .")}
@@ -110,9 +126,12 @@ function Dashboard() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-neutral-400">Loading…</p>
+        <div className="flex items-center gap-2 text-sm text-neutral-400">
+          <Spinner />
+          Loading…
+        </div>
       ) : (
-        <>
+        <div className="animate-fade-in">
           <Section title="Owned by me" empty="No documents yet — create or upload one above.">
             {owned.map((d) => (
               <DocRow key={d.id} doc={d} onDelete={() => deleteMutation.mutate(d.id)} />
@@ -124,7 +143,7 @@ function Dashboard() {
               <DocRow key={d.id} doc={d} />
             ))}
           </Section>
-        </>
+        </div>
       )}
     </main>
   );
@@ -146,11 +165,13 @@ function Section({
         {title}
       </h2>
       {hasChildren ? (
-        <div className="divide-y divide-neutral-200 rounded-lg border border-neutral-200">
+        <div className="divide-y divide-neutral-200 overflow-hidden rounded-lg border border-neutral-200">
           {children}
         </div>
       ) : (
-        <p className="text-sm text-neutral-400">{empty}</p>
+        <p className="rounded-lg border border-dashed border-neutral-200 px-4 py-6 text-center text-sm text-neutral-400">
+          {empty}
+        </p>
       )}
     </section>
   );
@@ -158,9 +179,11 @@ function Section({
 
 function DocRow({ doc, onDelete }: { doc: DocumentSummary; onDelete?: () => void }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3">
+    <div className="group flex items-center justify-between px-4 py-3 transition-colors hover:bg-neutral-50">
       <Link href={`/documents/${doc.id}`} className="min-w-0 flex-1">
-        <div className="truncate font-medium text-neutral-900">{doc.title}</div>
+        <div className="truncate font-medium text-neutral-900 transition-colors group-hover:text-neutral-950">
+          {doc.title}
+        </div>
         <div className="text-xs text-neutral-500">
           {doc.isOwner ? "Owned by you" : `Shared by ${doc.ownerName}`} · Updated{" "}
           {new Date(doc.updatedAt).toLocaleString()}
@@ -172,7 +195,7 @@ function DocRow({ doc, onDelete }: { doc: DocumentSummary; onDelete?: () => void
             e.preventDefault();
             onDelete();
           }}
-          className="ml-4 text-xs text-neutral-400 hover:text-red-600"
+          className="ml-4 shrink-0 rounded-md px-2 py-1 text-xs text-neutral-400 opacity-0 transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
         >
           Delete
         </button>

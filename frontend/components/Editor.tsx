@@ -4,6 +4,7 @@ import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import { useEffect, useRef, useState } from "react";
+import Spinner from "./Spinner";
 
 type SaveState = "saved" | "saving" | "error";
 
@@ -59,14 +60,19 @@ export default function DocEditor({
       {editable && (
         <div className="mb-3 flex items-center justify-between">
           <Toolbar editor={editor} />
-          <span className="text-xs text-neutral-400">
+          <span
+            className={`flex items-center gap-1.5 text-xs transition-colors ${
+              saveState === "error" ? "text-red-500" : "text-neutral-400"
+            }`}
+          >
+            {saveState === "saving" && <Spinner className="h-3 w-3" />}
             {saveState === "saving" && "Saving…"}
             {saveState === "saved" && "Saved"}
             {saveState === "error" && "Couldn't save"}
           </span>
         </div>
       )}
-      <div className="rounded-lg border border-neutral-200 px-6 py-4">
+      <div className="rounded-lg border border-neutral-200 px-6 py-4 transition-shadow focus-within:shadow-sm">
         <EditorContent editor={editor} />
       </div>
     </div>
@@ -127,7 +133,7 @@ function Toolbar({ editor }: { editor: Editor }) {
           type="button"
           title={b.title}
           onClick={b.onClick}
-          className={`rounded-md px-2.5 py-1.5 text-sm font-medium ${
+          className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition-all active:scale-90 ${
             b.active ? "bg-neutral-900 text-white" : "bg-neutral-100 hover:bg-neutral-200"
           }`}
         >
