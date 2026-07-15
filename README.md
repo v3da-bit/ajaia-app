@@ -99,12 +99,28 @@ each one needs a value from the last:
 
 ### 1. Database — Supabase
 
-Create a project at supabase.com → **Project Settings → Database →
-Connection string → URI**. Use the **direct connection** (port `5432`), not
-the pooled/PgBouncer one — the backend is a normal persistent Node process
-(not serverless), so it doesn't need connection pooling and the direct URL
-supports Prisma migrations, which the pooled one doesn't. Copy this URL;
-you'll paste it into Render next.
+Create a project at supabase.com → **Connect** (or Project Settings →
+Database) → **Connection string → URI**. Use the **Session pooler**, not
+"Direct connection" and not "Transaction pooler":
+
+- Direct connection is IPv6-only on new Supabase projects, and hosts like
+  Render don't have IPv6 egress — `prisma migrate deploy` will fail with
+  `P1001: Can't reach database server`.
+- Transaction pooler (port `6543`) doesn't support the prepared statements
+  Prisma migrations rely on.
+- Session pooler is IPv4-compatible and behaves like a normal persistent
+  connection, so it works for both migrations and the app's regular
+  queries — one connection string covers everything.
+
+The session pooler URI has a different username format than direct
+(`postgres.<project-ref>` instead of just `postgres`):
+
+```
+postgresql://postgres.<project-ref>:[YOUR-PASSWORD]@aws-0-<region>.pooler.supabase.com:5432/postgres
+```
+
+Replace `[YOUR-PASSWORD]` with your database password. Copy this; you'll
+paste it into Render next.
 
 ### 2. Backend — Render
 

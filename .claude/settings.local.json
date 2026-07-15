@@ -48,7 +48,8 @@
       "Bash(unzip -l /tmp/claude-1000/-home-webcodegenie-Desktop-Extra-data-ajaia-app/a3959345-7d2f-48bb-aa88-6e4658cfe35a/scratchpad/ajaia-docs-source.zip)",
       "Bash(grep -E \"\\\\.env$|\\\\.env\\\\.local$\")",
       "Bash(rm /tmp/claude-1000/-home-webcodegenie-Desktop-Extra-data-ajaia-app/a3959345-7d2f-48bb-aa88-6e4658cfe35a/scratchpad/ajaia-docs-source.zip *)",
-      "mcp__claude_ai_Google_Drive__list_recent_files"
+      "mcp__claude_ai_Google_Drive__list_recent_files",
+      "Bash(openssl rand *)"
     ],
     "additionalDirectories": [
       "/home/webcodegenie/Desktop/Extra-data/ajaia-app/app/api/documents",
