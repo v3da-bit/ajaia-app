@@ -59,7 +59,9 @@
       "Bash(node e2e-export-check.cjs)",
       "Bash(curl -s -o /dev/null -w \"Frontend: %{http_code}\\\\n\" https://ajaia-app.vercel.app/login)",
       "Bash(curl -s -o /dev/null -w \"Backend health: %{http_code}\\\\n\" https://ajaia-api.onrender.com/)",
-      "Bash(curl -s -X POST https://ajaia-api.onrender.com/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"alice@example.com\",\"password\":\"password123\"}' -w \"\\\\nLogin status: %{http_code}\\\\n\" -o /tmp/login_resp.json)"
+      "Bash(curl -s -X POST https://ajaia-api.onrender.com/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"alice@example.com\",\"password\":\"password123\"}' -w \"\\\\nLogin status: %{http_code}\\\\n\" -o /tmp/login_resp.json)",
+      "Bash(node screenshot-live.cjs)",
+      "Bash(python3)"
     ],
     "additionalDirectories": [
       "/home/webcodegenie/Desktop/Extra-data/ajaia-app/app/api/documents",
