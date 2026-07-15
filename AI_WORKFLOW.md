@@ -88,6 +88,38 @@ Not just "it compiled":
   raw, and that the service layer (not just the pure helper functions)
   enforces those rules.
 
+## Debugging the actual deployment, not just the local build
+
+Passing locally didn't mean passing in production — the live deploy surfaced
+four real bugs that local `curl`/browser testing hadn't, each fixed by
+reading the actual evidence (deploy logs, network tab, response bodies)
+rather than guessing:
+
+- **Supabase's direct connection is IPv6-only**; Render has no IPv6 egress,
+  so `prisma migrate deploy` failed with `P1001` on first deploy. Fixed by
+  switching to Supabase's session pooler (IPv4-compatible, and unlike the
+  transaction pooler, it still supports the prepared statements migrations
+  need).
+- **Vercel showed a 404 on every route** despite a clean build log — turned
+  out Framework Preset had fallen back to "Other" (Root Directory was set
+  after the initial import, so auto-detection never re-ran), so Vercel
+  wasn't using its Next.js-aware serving layer even though `next build`
+  itself succeeded.
+- **Delete looked broken but wasn't** — the DELETE endpoint returned `200`
+  with an empty body, and the frontend's generic fetch wrapper called
+  `res.json()` on it, which throws on empty input. The delete had actually
+  succeeded; the error toast was a client-side parsing artifact. Fixed at
+  the source (`@HttpCode(204)` on the endpoint, which the client already
+  special-cased) rather than papering over it with a try/catch in the
+  fetch wrapper.
+- **Headings and lists rendered with zero visual distinction** even though
+  the toolbar correctly showed them as active — `@tailwindcss/typography`
+  was never actually installed, so the `prose` classes on the editor were
+  silently inert and Tailwind's base reset (which strips default heading
+  size/list bullets on purpose) left them looking like plain paragraphs.
+  Confirmed the fix with a scripted browser check reading the *computed*
+  font-size and `list-style-type`, not just eyeballing a screenshot.
+
 ## What this note is not
 
 Not a claim that every line was hand-verified independently of the AI — for

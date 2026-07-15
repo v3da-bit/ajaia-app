@@ -5,6 +5,16 @@ import `.txt`/`.md` files as new documents, and share documents with other
 users. Built as two apps — a NestJS API and a Next.js frontend — talking over
 a REST API secured with JWT.
 
+## Live demo
+
+- **App**: https://ajaia-app.vercel.app
+- **API**: https://ajaia-api.onrender.com (frontend talks to this automatically — no need to visit it directly)
+- **Login**: pick any seeded account below, password `password123` for all
+
+The API is on Render's free tier, which spins down after inactivity — if the
+first request feels slow (10-30s), that's a cold start waking the instance
+up, not a bug.
+
 ## Stack
 
 - **Frontend**: Next.js 15 (App Router, client-rendered), TypeScript, Tailwind CSS, TipTap (rich text), TanStack React Query
