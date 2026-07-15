@@ -122,7 +122,7 @@ What I'd build next with another 2-4 hours:
 - Rate limiting on `/auth/login`
 
 ## Walkthrough Video
-[ ADD VIDEO URL HERE before submitting — Loom/YouTube unlisted link ]
+Video Link: https://drive.google.com/file/d/1lT5eDpnBd5K-LFnTWNLzgdFQ4hybDF5D/view?usp=drive_link
 
 ## Additional Links
 
