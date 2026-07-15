@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api";
 
@@ -12,11 +13,18 @@ const SEEDED_USERS = [
 const SEED_PASSWORD = "password123";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { user, loading, login } = useAuth();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!loading && user) router.replace("/");
+  }, [loading, user, router]);
+
+  if (loading || user) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
