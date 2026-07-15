@@ -1,36 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Docs — a lightweight collaborative document editor
 
-## Getting Started
+A small Google-Docs-inspired editor: create/rename/edit rich-text documents,
+import `.txt`/`.md` files as new documents, and share documents with other
+users. Built as two apps — a NestJS API and a Next.js frontend — talking over
+a REST API secured with JWT.
 
-First, run the development server:
+## Stack
+
+- **Frontend**: Next.js 15 (App Router, client-rendered), TypeScript, Tailwind CSS, TipTap (rich text), TanStack React Query
+- **Backend**: NestJS, TypeScript, Prisma ORM, Passport JWT, Multer (uploads)
+- **Database**: PostgreSQL
+- **Testing**: Jest (backend unit tests)
+
+## Seeded accounts
+
+The backend seeds three users on first run, all with password `password123`:
+
+| Name  | Email               |
+|-------|----------------------|
+| Alice | alice@example.com   |
+| Bob   | bob@example.com     |
+| Carol | carol@example.com   |
+
+Use these to demo sharing: sign in as Alice, create a document, share it with
+`bob@example.com`, then sign in as Bob (in another browser/incognito window)
+to see it under **Shared with me**.
+
+## Supported file uploads
+
+Only **`.txt`** and **`.md`** files can be imported. `.txt` files become
+paragraphs; `.md` files are parsed as Markdown (headings, lists, bold/italic,
+etc.) into the same rich-text format the editor uses. Other extensions are
+rejected with a clear error, both in the UI and from the API (`400 Bad Request`).
+
+## Local setup
+
+### 1. Database
+
+You need a Postgres instance reachable from the backend. Easiest path — Docker:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker run -d --name ajaia-postgres \
+  -e POSTGRES_USER=ajaia -e POSTGRES_PASSWORD=ajaia -e POSTGRES_DB=ajaia \
+  -p 5433:5432 postgres:16-alpine
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+(Port `5433` is used above to avoid clashing with a Postgres you might
+already have on `5432` — adjust `DATABASE_URL` below to match whatever port
+you use.)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Backend
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cd backend
+npm install
+cp .env.example .env   # or edit .env directly — see below
+npx prisma migrate dev   # creates tables
+npx prisma db seed       # creates Alice/Bob/Carol
+npm run start:dev        # http://localhost:4000
+```
 
-## Learn More
+`.env` needs:
 
-To learn more about Next.js, take a look at the following resources:
+```
+DATABASE_URL="postgresql://ajaia:ajaia@localhost:5433/ajaia?schema=public"
+JWT_SECRET="some-random-string"
+PORT=4000
+CORS_ORIGIN="http://localhost:3000"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Frontend
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+cd frontend
+npm install
+echo "NEXT_PUBLIC_API_URL=http://localhost:4000" > .env.local
+npm run dev   # http://localhost:3000
+```
 
-## Deploy on Vercel
+Open http://localhost:3000/login and sign in as one of the seeded users.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 4. Run backend tests
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+cd backend
+npm test
+```
+
+Covers: owner-vs-shared access rules (`canAccess`/`canManage`), the
+`.txt`/`.md` → HTML import logic (including HTML-escaping of plain text),
+and `DocumentsService` enforcing that only the owner can rename a document
+while shared users can still edit its content.
+
+## Deployment
+
+This was built to be deployed as three independent, free-tier-friendly pieces:
+
+- **Frontend → Vercel**: point it at `frontend/`, set `NEXT_PUBLIC_API_URL` to
+  your deployed backend URL.
+- **Backend → Render (or any Node host)**: point it at `backend/`, build
+  command `npm install && npx prisma generate && npm run build`, start
+  command `npx prisma migrate deploy && node dist/src/main.js`. Set
+  `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN` (your Vercel URL) as env vars.
+- **Database → Supabase Postgres** (or Render's managed Postgres): copy the
+  connection string into the backend's `DATABASE_URL`.
+
+After the first deploy, run `npx prisma db seed` once (e.g. via Render's
+shell) to create the demo accounts.
+
+## What's implemented vs. deprioritized
+
+**Working end-to-end**: auth (JWT, seeded users), create/rename/delete
+documents, rich text editing (bold/italic/underline/headings/bulleted &
+numbered lists) with autosave, `.txt`/`.md` upload → new document, sharing by
+email with an owned/shared distinction on the dashboard, persistence across
+refresh and restart.
+
+**Deliberately deprioritized** (see `ARCHITECTURE.md` for why): real-time
+co-editing/presence, comments, version history, `.docx` import, granular
+view-vs-edit permission levels (a share currently grants edit access),
+password reset / real user signup.
