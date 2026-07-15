@@ -59,8 +59,20 @@ function Dashboard() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => apiFetch(`/documents/${id}`, { method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["documents"] }),
+    // Refetch on both success AND failure: a 404 here almost always means the
+    // doc was already deleted (e.g. a duplicate click), so the list is stale
+    // either way and needs reconciling with the server.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["documents"] }),
+    onError: (err) =>
+      setError(err instanceof ApiError ? err.message : "Couldn't delete document"),
   });
+
+  function confirmDelete(doc: DocumentSummary) {
+    if (window.confirm(`Delete "${doc.title}"? This can't be undone.`)) {
+      setError(null);
+      deleteMutation.mutate(doc.id);
+    }
+  }
 
   const owned = docs.filter((d) => d.isOwner);
   const shared = docs.filter((d) => !d.isOwner);
@@ -134,7 +146,12 @@ function Dashboard() {
         <div className="animate-fade-in">
           <Section title="Owned by me" empty="No documents yet — create or upload one above.">
             {owned.map((d) => (
-              <DocRow key={d.id} doc={d} onDelete={() => deleteMutation.mutate(d.id)} />
+              <DocRow
+                key={d.id}
+                doc={d}
+                onDelete={() => confirmDelete(d)}
+                deleting={deleteMutation.isPending && deleteMutation.variables === d.id}
+              />
             ))}
           </Section>
 
@@ -177,9 +194,21 @@ function Section({
   );
 }
 
-function DocRow({ doc, onDelete }: { doc: DocumentSummary; onDelete?: () => void }) {
+function DocRow({
+  doc,
+  onDelete,
+  deleting,
+}: {
+  doc: DocumentSummary;
+  onDelete?: () => void;
+  deleting?: boolean;
+}) {
   return (
-    <div className="group flex items-center justify-between px-4 py-3 transition-colors hover:bg-neutral-50">
+    <div
+      className={`group flex items-center justify-between px-4 py-3 transition-colors hover:bg-neutral-50 ${
+        deleting ? "opacity-50" : ""
+      }`}
+    >
       <Link href={`/documents/${doc.id}`} className="min-w-0 flex-1">
         <div className="truncate font-medium text-neutral-900 transition-colors group-hover:text-neutral-950">
           {doc.title}
@@ -195,9 +224,11 @@ function DocRow({ doc, onDelete }: { doc: DocumentSummary; onDelete?: () => void
             e.preventDefault();
             onDelete();
           }}
-          className="ml-4 shrink-0 rounded-md px-2 py-1 text-xs text-neutral-400 opacity-0 transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+          disabled={deleting}
+          className="ml-4 flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs text-neutral-400 opacity-0 transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100 disabled:opacity-100"
         >
-          Delete
+          {deleting && <Spinner className="h-3 w-3" />}
+          {deleting ? "Deleting…" : "Delete"}
         </button>
       )}
     </div>
