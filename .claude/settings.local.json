@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(git --version)",
+      "Bash(command -v vercel)",
+      "Bash(command -v gh)",
+      "Bash(curl -sI --max-time 5 https://registry.npmjs.org/)",
+      "Bash(curl -sI --max-time 5 https://vercel.com)",
+      "Bash(npx --yes create-next-app@latest . --typescript --eslint --tailwind --app --no-src-dir --import-alias \"@/*\" --use-npm)"
+    ]
+  }
+}
