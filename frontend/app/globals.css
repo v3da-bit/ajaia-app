@@ -34,3 +34,12 @@ body {
 .animate-fade-in {
   animation: fade-in-scale 0.12s ease-out;
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}

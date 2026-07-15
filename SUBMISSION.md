@@ -42,6 +42,16 @@ distinction, persistence across refresh and server restart, toast
 notifications and a confirm dialog on delete. Verified live on the deployed
 URLs above, not just locally.
 
+**Stretch goal implemented**: export a document as Markdown (converts the
+editor's HTML to `.md`, including underline via inline `<u>` passthrough
+since Markdown has no native underline syntax) or as PDF (via the browser's
+native print dialog, styled to hide app chrome and show just the document).
+Chosen over real-time collaboration (needs a CRDT/websocket architecture
+change, too large for the remaining time) and version history/role-based
+sharing (each needs new schema — left as "next 2-4 hours" items below
+instead, so the one stretch feature that shipped is fully solid rather than
+three half-built ones).
+
 ## What's incomplete / next 2-4 hours
 
 - Granular share permissions (view-only vs. edit) — currently a share always

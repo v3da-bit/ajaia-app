@@ -58,7 +58,7 @@ export default function DocEditor({
   return (
     <div>
       {editable && (
-        <div className="mb-3 flex items-center justify-between">
+        <div className="no-print mb-3 flex items-center justify-between">
           <Toolbar editor={editor} />
           <span
             className={`flex items-center gap-1.5 text-xs transition-colors ${

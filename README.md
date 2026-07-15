@@ -179,7 +179,8 @@ that's expected, not a bug.
 documents, rich text editing (bold/italic/underline/headings/bulleted &
 numbered lists) with autosave, `.txt`/`.md` upload → new document, sharing by
 email with an owned/shared distinction on the dashboard, persistence across
-refresh and restart.
+refresh and restart, exporting a document as Markdown or PDF (via the
+browser's native print dialog — no server-side rendering needed).
 
 **Deliberately deprioritized** (see `ARCHITECTURE.md` for why): real-time
 co-editing/presence, comments, version history, `.docx` import, granular

@@ -54,7 +54,9 @@
       "Bash(node dist/src/main.js)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/login)",
       "Bash(kill 35230)",
-      "Bash(pkill -f \"next-server\")"
+      "Bash(pkill -f \"next-server\")",
+      "Bash(node -e ' *)",
+      "Bash(node e2e-export-check.cjs)"
     ],
     "additionalDirectories": [
       "/home/webcodegenie/Desktop/Extra-data/ajaia-app/app/api/documents",

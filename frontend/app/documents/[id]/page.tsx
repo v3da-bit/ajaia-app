@@ -9,6 +9,7 @@ import DocEditor from "@/components/Editor";
 import Spinner from "@/components/Spinner";
 import { useToast } from "@/components/Toast";
 import { apiFetch, ApiError } from "@/lib/api";
+import { downloadMarkdown } from "@/lib/export";
 
 type DocumentDetail = {
   id: number;
@@ -79,13 +80,20 @@ function DocumentEditorPage() {
 
   return (
     <main className="animate-fade-in mx-auto max-w-3xl px-4 py-10">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="no-print mb-6 flex items-center justify-between">
         <Link href="/" className="text-sm text-neutral-500 transition-colors hover:text-neutral-800 hover:underline">
           ← My Docs
         </Link>
-        {doc.isOwner ? <ShareControl documentId={documentId} /> : (
-          <span className="text-xs text-neutral-500">Shared by {doc.ownerName} · view &amp; edit access</span>
-        )}
+        <div className="flex items-center gap-2">
+          <ExportControl title={doc.title} content={doc.content} />
+          {doc.isOwner ? (
+            <ShareControl documentId={documentId} />
+          ) : (
+            <span className="text-xs text-neutral-500">
+              Shared by {doc.ownerName} · view &amp; edit access
+            </span>
+          )}
+        </div>
       </div>
 
       <TitleField
@@ -105,6 +113,47 @@ function DocumentEditorPage() {
         />
       </div>
     </main>
+  );
+}
+
+function ExportControl({ title, content }: { title: string; content: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className={`rounded-lg border px-3 py-1.5 text-sm transition-all active:scale-[0.97] ${
+          open ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300 hover:bg-neutral-50"
+        }`}
+      >
+        Export
+      </button>
+      {open && (
+        <div className="animate-fade-in absolute right-0 z-10 mt-2 w-48 rounded-lg border border-neutral-200 bg-white p-1.5 shadow-lg">
+          <button
+            onClick={() => {
+              downloadMarkdown(title, content);
+              setOpen(false);
+            }}
+            className="block w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-neutral-50"
+          >
+            Download as Markdown
+          </button>
+          <button
+            onClick={() => {
+              setOpen(false);
+              // Wait for the popover to close before the browser snapshots
+              // the page for print — otherwise it'd show up in the PDF.
+              setTimeout(() => window.print(), 50);
+            }}
+            className="block w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-neutral-50"
+          >
+            Print / Save as PDF
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
