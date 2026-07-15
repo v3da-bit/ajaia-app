@@ -61,7 +61,8 @@
       "Bash(curl -s -o /dev/null -w \"Backend health: %{http_code}\\\\n\" https://ajaia-api.onrender.com/)",
       "Bash(curl -s -X POST https://ajaia-api.onrender.com/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"alice@example.com\",\"password\":\"password123\"}' -w \"\\\\nLogin status: %{http_code}\\\\n\" -o /tmp/login_resp.json)",
       "Bash(node screenshot-live.cjs)",
-      "Bash(python3)"
+      "Bash(python3)",
+      "mcp__claude_ai_Google_Drive__get_file_metadata"
     ],
     "additionalDirectories": [
       "/home/webcodegenie/Desktop/Extra-data/ajaia-app/app/api/documents",

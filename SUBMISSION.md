@@ -1,63 +1,135 @@
-# Submission checklist
+# Ajaia Full Stack Developer Assignment Submission
 
-## Live demo
+## Google Drive Folder
+https://drive.google.com/drive/folders/1wHjSejuhHnmXEACgipy62hLAni0HXxl7?usp=drive_link
 
-- **App**: https://ajaia-app.vercel.app
-- **API**: https://ajaia-api.onrender.com
-- **Login**: `alice@example.com` / `bob@example.com` / `carol@example.com`, password `password123` for all — use Alice + Bob to see the sharing flow (Alice shares a doc, Bob sees it under "Shared with me")
+## Live Application
+URL: https://ajaia-app.vercel.app
 
-## Included in this repo
+## Source Code
+Repository: https://github.com/v3da-bit/ajaia-app
 
-- [x] `backend/` — NestJS API (auth, documents, sharing, upload), Prisma schema + migration, seed script
-- [x] `frontend/` — Next.js app (login, dashboard, editor)
-- [x] `README.md` — local setup/run instructions, live demo link + credentials, seeded accounts, supported upload types, deployment steps
-- [x] `ARCHITECTURE.md` — architecture note: what was prioritized and why, what was cut
-- [x] `AI_WORKFLOW.md` — AI tool usage note
-- [x] `SUBMISSION.md` — this file
-- [x] Automated tests: `backend/src/documents/{access,import,documents.service}*.spec.ts` (12 tests, run via `cd backend && npm test`)
-- [x] Input validation (`class-validator` DTOs) and error handling (404/403/400 with clear, user-facing messages) throughout the API
-- [x] **Live deployment** — Vercel (frontend) + Render (backend) + Supabase (Postgres), verified working end-to-end including the sharing flow across two accounts
+## Test Credentials
 
-## Not included — needs a human
+User 1 (owner in the demo sharing flow):
+Email: alice@example.com
+Password: password123
 
-These can't be produced from an automated environment and are called out
-rather than silently skipped:
+User 2 (recipient in the demo sharing flow):
+Email: bob@example.com
+Password: password123
 
-- [ ] **Walkthrough video (3-5 min)** — needs to be recorded and narrated by
-      a person. Suggested flow, matching what's been verified end-to-end:
-      log in as Alice → create a document → format text (bold/heading/list)
-      → watch autosave → upload a `.md` file → share the original doc with
-      Bob → switch to Bob → see it under "Shared with me" with content
-      intact → delete a document (shows the confirm dialog + toast).
-- [ ] Google Drive folder containing this source, the docs, the live URL,
-      and the video URL as a text file — final packaging step.
+A third seeded account (carol@example.com, same password) also exists for additional testing.
 
-## What's working
+## Completed Features
 
-Everything in "Working end-to-end" in `README.md`: auth, document CRUD, rich
-text editing (bold/italic/underline/headings/lists — headings and lists are
-now visually distinct after fixing a missing Tailwind Typography plugin),
-autosave, `.txt`/`.md` upload-to-document, sharing with an owned/shared
-distinction, persistence across refresh and server restart, toast
-notifications and a confirm dialog on delete. Verified live on the deployed
-URLs above, not just locally.
+✅ JWT authentication (seeded demo accounts, no real signup — kept intentionally lightweight per assignment guidance)
+✅ Create documents
+✅ Rename documents (owner only)
+✅ Rich text editing — bold, italic, underline, H1/H2 headings, bulleted & numbered lists
+✅ Autosave + reopen (debounced, with a save-state indicator)
+✅ File upload — .txt and .md → new editable document (other types rejected with a clear error)
+✅ Document sharing by email, with an explicit Owned vs. Shared distinction on the dashboard
+✅ Persistent PostgreSQL storage (survives refresh and server restart)
+✅ Delete with confirmation dialog + toast notifications for all major actions
+✅ **Stretch feature**: export a document as Markdown or PDF (browser print, no extra service)
 
-**Stretch goal implemented**: export a document as Markdown (converts the
-editor's HTML to `.md`, including underline via inline `<u>` passthrough
-since Markdown has no native underline syntax) or as PDF (via the browser's
-native print dialog, styled to hide app chrome and show just the document).
-Chosen over real-time collaboration (needs a CRDT/websocket architecture
-change, too large for the remaining time) and version history/role-based
-sharing (each needs new schema — left as "next 2-4 hours" items below
-instead, so the one stretch feature that shipped is fully solid rather than
-three half-built ones).
+## Technology Stack
 
-## What's incomplete / next 2-4 hours
+Frontend:
+- Next.js (App Router, client-rendered), TypeScript
+- Tailwind CSS (+ Typography plugin for editor content)
+- TipTap (rich text editor)
+- TanStack React Query (server state/mutations)
 
-- Granular share permissions (view-only vs. edit) — currently a share always
-  grants edit access.
-- `.docx` upload support.
-- A frontend test (component or Playwright) codified from the manual
-  browser-scripted passes used during development, so the end-to-end flow is
-  guarded by CI, not just one-off manual runs.
-- Rate limiting / brute-force protection on `/auth/login`.
+Backend:
+- NestJS, TypeScript
+- Prisma ORM
+- Passport + JWT (auth), class-validator (input validation)
+- Multer (file upload handling)
+
+Database:
+- PostgreSQL (Supabase, session pooler connection)
+
+Testing:
+- Jest — 12 backend unit tests covering access control, file-import HTML conversion, and service-layer permission enforcement
+
+Deployment:
+- Frontend → Vercel
+- Backend → Render
+- Database → Supabase
+
+## Architecture
+
+Two independently deployed apps: a Next.js frontend and a NestJS API, talking
+over a REST API secured with JWT bearer tokens (no shared session/cookie —
+the frontend holds no direct database access). Documents are stored in
+PostgreSQL via Prisma. Rich text content is persisted as **HTML** (TipTap's
+native serialization), not JSON — this was a deliberate choice so uploaded
+`.txt`/`.md` files and manually-typed content share one representation
+without a conversion step. Sharing is modeled as a `DocumentShare` join
+table (`documentId`, `userId`); access control is two pure, unit-tested
+functions (`canAccess`, `canManage`) reused across every service method that
+touches a document, rather than authorization logic scattered per endpoint.
+Full detail and reasoning in `ARCHITECTURE.md`.
+
+## AI Workflow
+
+AI tool used: Claude Code (Anthropic) — used as the primary builder for the
+full stack, terminal, and deployment debugging, not just code suggestions.
+
+AI helped with:
+- Scaffolding (NestJS/Next.js/Prisma setup) and wiring auth/guards/validation correctly the first time
+- Keeping access-control logic consistent between the service layer and its tests
+- Diagnosing real production issues from evidence (Supabase IPv6-only connection, Vercel Framework Preset misdetection, a `200`-with-empty-body delete bug, a missing Tailwind Typography plugin) rather than guessing
+
+What was changed or rejected rather than accepted as-is:
+- The initial build was a leaner Next.js + SQLite + mocked-auth stack; a
+  request to switch to NestJS + Postgres + JWT was pushed back on first
+  (flagged the added deploy complexity and time cost) before being built,
+  once that tradeoff was made explicit
+- `marked` v18 (ESM-only) broke Jest's CommonJS transform — downgraded to
+  `marked@4` rather than reconfiguring the test pipeline for one dependency
+- Declined to add Zustand alongside React Query "because the brief allowed
+  it" — the remaining client state fits in one `useState`, so a second
+  state library would have been unrequested complexity
+
+How correctness was verified: `tsc --noEmit` + production builds on both
+apps, backend driven with real `curl` requests (login, create, share,
+reject bad uploads), and full user flows driven with a scripted real
+Chrome browser (not a mock) — login → create → format → autosave → upload
+→ share → second-account view → reload-persists → export. Full detail in
+`AI_WORKFLOW.md`.
+
+## Tradeoffs
+
+Implemented:
+- Core document workflow (create/rename/edit/autosave/reopen)
+- Sharing with owned/shared distinction
+- File import (.txt/.md)
+- Export to Markdown/PDF (stretch)
+
+Deliberately deprioritized (see `ARCHITECTURE.md` for the reasoning behind each):
+- Real-time collaboration — would require a CRDT/websocket architecture change, not a small add
+- Comments / suggestion mode
+- Document version history
+- Granular view-vs-edit share permissions (a share currently grants edit access)
+- `.docx` upload support
+
+What I'd build next with another 2-4 hours:
+- Role-based sharing (view-only vs. edit)
+- A frontend test suite, codifying the manual browser-scripted passes used during development
+- Rate limiting on `/auth/login`
+
+## Walkthrough Video
+[ ADD VIDEO URL HERE before submitting — Loom/YouTube unlisted link ]
+
+## Additional Links
+
+GitHub: https://github.com/v3da-bit/ajaia-app
+
+Documentation included in repository:
+- `README.md` — setup, live demo, deployment steps
+- `ARCHITECTURE.md` — architecture note
+- `AI_WORKFLOW.md` — AI workflow note
+- `SUBMISSION.md` — this file
