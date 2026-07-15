@@ -49,7 +49,12 @@
       "Bash(grep -E \"\\\\.env$|\\\\.env\\\\.local$\")",
       "Bash(rm /tmp/claude-1000/-home-webcodegenie-Desktop-Extra-data-ajaia-app/a3959345-7d2f-48bb-aa88-6e4658cfe35a/scratchpad/ajaia-docs-source.zip *)",
       "mcp__claude_ai_Google_Drive__list_recent_files",
-      "Bash(openssl rand *)"
+      "Bash(openssl rand *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4000/)",
+      "Bash(node dist/src/main.js)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/login)",
+      "Bash(kill 35230)",
+      "Bash(pkill -f \"next-server\")"
     ],
     "additionalDirectories": [
       "/home/webcodegenie/Desktop/Extra-data/ajaia-app/app/api/documents",
