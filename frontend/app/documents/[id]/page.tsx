@@ -7,6 +7,7 @@ import Link from "next/link";
 import RequireAuth from "@/components/RequireAuth";
 import DocEditor from "@/components/Editor";
 import Spinner from "@/components/Spinner";
+import { useToast } from "@/components/Toast";
 import { apiFetch, ApiError } from "@/lib/api";
 
 type DocumentDetail = {
@@ -33,6 +34,7 @@ function DocumentEditorPage() {
   const { id } = useParams<{ id: string }>();
   const documentId = Number(id);
   const queryClient = useQueryClient();
+  const showToast = useToast();
 
   const { data: doc, isLoading, error } = useQuery({
     queryKey: ["documents", documentId],
@@ -43,7 +45,14 @@ function DocumentEditorPage() {
   const saveMutation = useMutation({
     mutationFn: (data: { title?: string; content?: string }) =>
       apiFetch(`/documents/${documentId}`, { method: "PATCH", body: JSON.stringify(data) }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["documents"] }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      // Only toast on a title rename — toasting every autosaved keystroke
+      // would spam the screen, and the inline "Saved" indicator covers that.
+      if (variables.title !== undefined) showToast("Document renamed");
+    },
+    onError: (err) =>
+      showToast(err instanceof ApiError ? err.message : "Couldn't save", "error"),
   });
 
   if (isLoading) {
@@ -131,6 +140,7 @@ function ShareControl({ documentId }: { documentId: number }) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const showToast = useToast();
 
   const { data: shares = [] } = useQuery({
     queryKey: ["documents", documentId, "shares"],
@@ -145,18 +155,27 @@ function ShareControl({ documentId }: { documentId: number }) {
         body: JSON.stringify({ email }),
       }),
     onSuccess: () => {
+      showToast(`Shared with ${email}`);
       setEmail("");
       setError(null);
       queryClient.invalidateQueries({ queryKey: ["documents", documentId, "shares"] });
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : "Couldn't share"),
+    onError: (err) => {
+      const message = err instanceof ApiError ? err.message : "Couldn't share";
+      setError(message);
+      showToast(message, "error");
+    },
   });
 
   const unshareMutation = useMutation({
     mutationFn: (userId: number) =>
       apiFetch(`/documents/${documentId}/shares/${userId}`, { method: "DELETE" }),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["documents", documentId, "shares"] }),
+    onSuccess: () => {
+      showToast("Access removed");
+      queryClient.invalidateQueries({ queryKey: ["documents", documentId, "shares"] });
+    },
+    onError: (err) =>
+      showToast(err instanceof ApiError ? err.message : "Couldn't remove access", "error"),
   });
 
   return (

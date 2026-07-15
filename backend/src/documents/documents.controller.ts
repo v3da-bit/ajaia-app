@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   ParseIntPipe,
   Patch,
@@ -60,6 +61,7 @@ export class DocumentsController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   remove(@CurrentUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
     return this.documents.remove(id, user.id);
   }

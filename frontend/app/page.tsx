@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import RequireAuth from "@/components/RequireAuth";
 import Spinner from "@/components/Spinner";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { useToast } from "@/components/Toast";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch, ApiError } from "@/lib/api";
 
@@ -29,9 +32,11 @@ export default function DashboardPage() {
 
 function Dashboard() {
   const { user, logout } = useAuth();
+  const router = useRouter();
   const queryClient = useQueryClient();
-  const [error, setError] = useState<string | null>(null);
+  const showToast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingDelete, setPendingDelete] = useState<DocumentSummary | null>(null);
 
   const { data: docs = [], isLoading } = useQuery({
     queryKey: ["documents"],
@@ -39,40 +44,46 @@ function Dashboard() {
   });
 
   const createMutation = useMutation({
-    mutationFn: () => apiFetch<{ id: number }>("/documents", { method: "POST", body: "{}" }),
+    mutationFn: () =>
+      apiFetch<{ id: number; title: string }>("/documents", { method: "POST", body: "{}" }),
     onSuccess: (doc) => {
-      window.location.href = `/documents/${doc.id}`;
+      showToast("Document created");
+      router.push(`/documents/${doc.id}`);
     },
+    onError: (err) =>
+      showToast(err instanceof ApiError ? err.message : "Couldn't create document", "error"),
   });
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => {
       const form = new FormData();
       form.append("file", file);
-      return apiFetch<{ id: number }>("/documents/upload", { method: "POST", body: form });
+      return apiFetch<{ id: number; title: string }>("/documents/upload", {
+        method: "POST",
+        body: form,
+      });
     },
     onSuccess: (doc) => {
-      window.location.href = `/documents/${doc.id}`;
+      showToast(`Imported "${doc.title}"`);
+      router.push(`/documents/${doc.id}`);
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : "Upload failed"),
+    onError: (err) =>
+      showToast(err instanceof ApiError ? err.message : "Upload failed", "error"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => apiFetch(`/documents/${id}`, { method: "DELETE" }),
+    onSuccess: () => showToast("Document deleted"),
+    onError: (err) =>
+      showToast(err instanceof ApiError ? err.message : "Couldn't delete document", "error"),
     // Refetch on both success AND failure: a 404 here almost always means the
     // doc was already deleted (e.g. a duplicate click), so the list is stale
     // either way and needs reconciling with the server.
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["documents"] }),
-    onError: (err) =>
-      setError(err instanceof ApiError ? err.message : "Couldn't delete document"),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      setPendingDelete(null);
+    },
   });
-
-  function confirmDelete(doc: DocumentSummary) {
-    if (window.confirm(`Delete "${doc.title}"? This can't be undone.`)) {
-      setError(null);
-      deleteMutation.mutate(doc.id);
-    }
-  }
 
   const owned = docs.filter((d) => d.isOwner);
   const shared = docs.filter((d) => !d.isOwner);
@@ -93,12 +104,6 @@ function Dashboard() {
           </button>
         </div>
       </div>
-
-      {error && (
-        <p className="animate-fade-in mb-6 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      )}
 
       <div className="mb-10 flex flex-wrap items-center gap-3">
         <button
@@ -125,10 +130,8 @@ function Dashboard() {
           accept=".txt,.md"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) {
-              setError(null);
-              uploadMutation.mutate(file);
-            }
+            if (file) uploadMutation.mutate(file);
+            e.target.value = "";
           }}
           className="hidden"
         />
@@ -149,7 +152,7 @@ function Dashboard() {
               <DocRow
                 key={d.id}
                 doc={d}
-                onDelete={() => confirmDelete(d)}
+                onDelete={() => setPendingDelete(d)}
                 deleting={deleteMutation.isPending && deleteMutation.variables === d.id}
               />
             ))}
@@ -162,6 +165,16 @@ function Dashboard() {
           </Section>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete document"
+        message={`Delete "${pendingDelete?.title}"? This can't be undone.`}
+        confirmLabel="Delete"
+        confirming={deleteMutation.isPending}
+        onConfirm={() => pendingDelete && deleteMutation.mutate(pendingDelete.id)}
+        onCancel={() => setPendingDelete(null)}
+      />
     </main>
   );
 }

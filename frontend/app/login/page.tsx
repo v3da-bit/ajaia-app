@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api";
 import Spinner from "@/components/Spinner";
+import { useToast } from "@/components/Toast";
 
 const SEEDED_USERS = [
   { name: "Alice", email: "alice@example.com" },
@@ -16,6 +17,7 @@ const SEED_PASSWORD = "password123";
 export default function LoginPage() {
   const { user, loading, login } = useAuth();
   const router = useRouter();
+  const showToast = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +35,11 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
+      showToast("Signed in");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Something went wrong");
+      const message = err instanceof ApiError ? err.message : "Something went wrong";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setSubmitting(false);
     }
